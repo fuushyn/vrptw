@@ -9,6 +9,8 @@ class Node:
     q_v: float  # Demand 
     e_v: float  # Window start
     l_v: float  # Window end
+    x: float # x coord
+    y: float # y coord
 
 @dataclass
 class Edge:
@@ -18,9 +20,14 @@ class Edge:
     d_e: float  # Distance
 
 N_near = 50
+N = 100 # no of nodes
+Q = 200 #capacity, load from loader
+
 
 
 # array Nodes
+nodes  =[] # load from loader
+edges = [] # load from loader
 # array Edges
 
 
@@ -90,7 +97,7 @@ def get_sorted_customers():
     pass
 
 
-def two_opt_star(sig, v):
+def two_opt_star(sig, v_in):
     N = []
     v_sorted = get_sorted_customers(v_in)
     for i in range(N_near):
@@ -130,7 +137,7 @@ def two_opt_star(sig, v):
 def out_relocate(sig, v):
     N = []
     v_sorted = get_sorted_customers(v_in)
-    for i in range(N_near):``
+    for i in range(N_near):
         sig_prime1 = sig
         sig_prime2 = sig
         w = v_sorted[i]
