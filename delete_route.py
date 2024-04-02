@@ -1,20 +1,26 @@
 import random 
+from dataclasses import dataclass
+
 from lex import lex_next, lex_next_prune, is_last_subseq
+from load_instance import Node, Edge, load_data
 
 ##load from loader
-nodes  = []
-edges = []
-Q = 200 #read input
+nodes, edges,Q = load_data("input.txt")
 
 N = len(nodes)-1 #no of customers
-maxTime = 100
-k_max = 10
+maxTime = 1000
+k_max = 5
 
 sig = []
 
 for i in range(1, len(nodes)):
-    sig.append([nodes[0].id, nodes[i].id, nodes[0].id])
+    sig.append([nodes[0], nodes[i], nodes[0]])
 
+print(len(sig))
+# print(sig[0])
+print(len(sig[0]))
+print(len(sig[1]))
+print("okokok")
 
 def get_all_insertions(v, sig):
     all_insertions = []
@@ -29,20 +35,25 @@ def check_route_feasibility(route):
     #capacity constraint
     q = 0
     for v in route[1:-1]:
-        q+= nodes[v].q_v
+        q+= v.q_v
     
     if(q> Q):
         return False
     
     #time constraint
-    a = [nodes[0].e_v for i in range(N+2)]
-    for i in range(1,N+2):
-        a[i]= max(a[i-1]+ nodes[i-1].s_v+ edges[i-1][i], nodes[i].e_v)
-    
-    for i in range(1, N+2):
+    a = [0 for i in range(N+2)]
+    a[0] = nodes[0].e_v
+
+    for i in range(1,N+1):
+        a[i]= max(a[i-1]+ nodes[i-1].s_v+ edges[i-1][i].c_vw, nodes[i].e_v)
+
+    a[N+1]= max(a[N]+ nodes[N].s_v+ edges[N][0].c_vw, nodes[0].e_v)
+
+    for i in range(1, N+1):
         if(a[i]> nodes[i].l_v):
             return False
-    
+    if(a[N+1]> nodes[0].l_v):
+        return False
     return True
 
 def get_all_feasible_insertions(v, sig):
@@ -262,10 +273,9 @@ def delete_route(sig):
             sig_prime = N_insert.pop(rand_index)
             sig = sig_prime
         
-        else:
-            ### squeeze mechanism
-            # pass
-            sig = squeeze(v_in, sig)
+        # else:
+        #     ### squeeze mechanism
+        #     sig = squeeze(v_in, sig)
         
 
         present = False
@@ -378,5 +388,16 @@ def delete_route(sig):
 
             sig = sig_new 
             # sig = perturb(sig)###?
-        
 
+    if(ep!=[]):
+        sig = sig_copy   
+        print("no change")
+    return sig 
+
+
+sig = delete_route(sig)
+print(len(sig))
+print(sig[0])
+print(sig[1])
+print(len(sig[0]))
+print(len(sig[1]))

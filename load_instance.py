@@ -21,38 +21,42 @@ class Edge:
 
 #### travel time is same as distance (https://www.sintef.no/projectweb/top/vrptw/documentation2/ )
 
-with open("input.txt", 'r') as f:
-    content = f.readlines()
 
-print("instance: ", content[0])
-print("vehicle and capacity: ", content[4])
+def load_data(input_file):
+    with open(input_file, 'r') as f:
+        content = f.readlines()
 
-nodes = []
-edges = []
+    # print("instance: ", content[0])
+    # print("vehicle and capacity: ", content[4])
+    
+    capacity = int(content[4].split()[1])
+    nodes = []
 
-for i in range(9, len(content)):
-    values = content[i].split()
-    values = list(map(lambda x: float(x), values))
-    ## values = [node_id, x, y, demand, start_time, end_time, service_time]
+    for i in range(9, len(content)):
+        values = content[i].split()
+        values = list(map(lambda x: float(x), values))
+        ## values = [node_id, x, y, demand, start_time, end_time, service_time]
 
-    new_node = Node(id=values[0], x= values[1], y = values[2], q_v= values[3], e_v = values[4], l_v = values[5], s_v= values[6])
+        new_node = Node(id=values[0], x= values[1], y = values[2], q_v= values[3], e_v = values[4], l_v = values[5], s_v= values[6])
 
-    nodes.append(new_node)
+        nodes.append(new_node)
 
+    edges = [[] for i in range(len(nodes))]
 
-n = len(nodes)
-for i in range(n):
-    for j in range(i+1, n):
-        n1 = nodes[i]
-        n2 = nodes[j]
-        print(n1.x, n2.x)
-        distance = math.sqrt((n1.x-n2.x)**2 + (n1.y- n2.y)**2)
+    n = len(nodes)
+    for i in range(n):
+        for j in range(n):
+            n1 = nodes[i]
+            n2 = nodes[j]
+            # print(n1.x, n2.x)
+            distance = math.sqrt((n1.x-n2.x)**2 + (n1.y- n2.y)**2)
 
-        edge_1 = Edge(v = n1.id, w = n2.id,c_vw = distance, d_e=distance)
-        edge_2 = Edge(v = n2.id, w = n1.id,c_vw = distance, d_e=distance)
-        edges.append(edge_1)
-        edges.append(edge_2)
+            edge_1 = Edge(v = n1.id, w = n2.id,c_vw = distance, d_e=distance)
+            edges[i].append(edge_1)
 
-# print(edges)
+    return nodes, edges, capacity
 
-        
+nodes, edges, capacity = load_data("input.txt")
+# print(len(edges))
+# print(len(nodes))
+# print(capacity)        
