@@ -280,11 +280,17 @@ def delete_route(sig):
                     n_c = len(original_route)-2 ## no of customers
 
 
-###!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     ##compute z_i ->latest possible arrival times
+                    # z_i  = min(l_i, z_i+1 - c_i_i+1 - s_i)
+                    # z_depot = l_depot
+                    z= [0 for i in range(n_c+2)]
+                    z[-1] = original_route[-1].l_v
+                    for i in range(1, n_c+1)[::-1]:
+                        curr_node = original_route[i]
+                        next_node = original_route[i+1]
 
-                    z = [0 for i in range(n_c)] ###depot excluded
-###!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        z[i] = min(curr_node.l_v, z[i+1]- edges[curr_node.id][next_node.id]- curr_node.s_v)
+                    
                     
                     ejections = [1] ### contains indices of the original route
                     a_j_prev  = 0
