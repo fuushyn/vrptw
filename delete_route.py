@@ -1,4 +1,5 @@
 import random 
+from lex import lex_next, lex_next_prune, is_last_subseq
 
 ##load from loader
 nodes  = []
@@ -7,7 +8,7 @@ Q = 200 #read input
 
 N = len(nodes)-1 #no of customers
 maxTime = 100
-
+k_max = 10
 
 sig = []
 
@@ -266,13 +267,102 @@ def delete_route(sig):
                 break
         
         if(not present):
-            ### insertion ejection
-            ### random ejection
-            N_insert = get_all_insertions(v_in, sig)
+            p[v_in.id] += 1
+            P_best = float('inf')
+            best_ejections = [1]
+            best_ejections_route = 0
+            best_insertion_position = 0
+
+            for route in sig:
+                for position in range(1, len(route)):
+                    original_route = route ## contains nodes
+                    original_route.insert(v_in, position)
+                    n_c = len(original_route)-2 ## no of customers
 
 
+###!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    ##compute z_i ->latest possible arrival times
+
+                    z = [0 for i in range(n_c)] ###depot excluded
+###!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    
+                    ejections = [1] ### contains indices of the original route
+                    a_j_prev  = 0
+                    while(ejections !=[n_c]):
+                        # compute P_sum
+                        P_sum = 0
+                        for e in ejections:
+                            P_sum += p[original_route[e].id]
+
+                        # compute a_j
+                        j = ejections[-1]+1
 
 
+                        ejected_route = original_route
+
+                        for e in ejections[::-1]:
+                            ejected_route.pop(e)
+                        
+                        ##j in o.r. is j-len(ejections)
+                        j_ej = j-len(ejections)
+
+                        a_0 = ejected_route[0].e_v 
+                        a_prev = a_0 
+                        for i in range(1, j_ej+1):
+                            curr_node = ejected_route[i]
+                            prev_node = ejected_route[i-1]
+
+                            a_curr = max(a_prev+prev_node.s_v+ edges[prev_node.id][curr_node.id],curr_node.e_v )
+                            
+                            a_prev = a_curr
+
+                        a_j = a_prev 
+
+                        # compute Q_prime, aka total demand of original route
+                        Q_prime = 0
+
+                        for node in original_route:
+                            Q_prime+= node.q_v
+                        
+                        # compute sum(q_e)
+                        q_e_sum = 0
+                        for e in ejections:
+                            q_e_sum += original_route[e].q_v
+
+                        ##### pruning
+                            #### invalid route and subroutes
+                        cond1 = (P_sum>=P_best)
+                        cond2 = (original_route[j].l_v < a_j)
+                        cond3 = (a_j == a_j_prev and Q_prime<=Q)
+
+                        if(cond1 or cond2 or cond3):
+                            ejections = lex_next_prune(ejections, n_c , k_max)
+                            continue 
+                        
+                        # check feasible
+                        cond4 = (a_j <=z[j])
+                        cond5 = (Q_prime- q_e_sum<=Q)
+
+                        if(cond4 and cond5):
+                            a_j_prev = a_j
+
+                            if(P_sum< P_best):
+                                P_best = P_sum 
+                                best_ejections = ejections
+                                best_ejections_route = route
+                                best_insertion_position = position 
+
+                        ejections = lex_next(ejections, n_c, k_max)
 
 
+            sig_new = sig 
+            sig_new[best_ejections_route].insert(v_in, best_insertion_position)
+
+            for e in best_ejections[::-1]:
+                ep.append(sig_new[best_ejections_route][e])
+                sig_new[best_ejections_route].pop(e)
+
+            sig = sig_new 
+            sig = perturb(sig)###?
+        
 

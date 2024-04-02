@@ -1,4 +1,5 @@
 ## generate subsequences of 1..n of a given max lenght in lexicographic order
+### subsequences are 1-indexed
 
 
 def lex_next(subseq, n, k_max):
