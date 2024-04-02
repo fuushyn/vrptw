@@ -16,6 +16,14 @@ for i in range(1, len(nodes)):
     sig.append([nodes[0].id, nodes[i].id, nodes[0].id])
 
 
+def get_all_insertions(v, sig):
+    all_insertions = []
+    for i in range(len(sig)):
+        for j in range(1, len(sig[i])):
+            sig_new = sig
+            sig_new[i].insert(j, v)
+            all_insertions.append(sig_new)
+    return all_insertions
 
 def check_route_feasibility(route):
     #capacity constraint
@@ -215,7 +223,7 @@ def get_route_neighbourhood(sig, r, v):
             N_r.append(sig_prime)
     return N_r
 
-def squeeze(v, sig):
+def squeeze(v, sig, alpha= 0.99):
     sig_copy = sig
     N_insert = get_all_insertions(v, sig)
     sig = get_min_penalty_sig(N_insert)
@@ -369,6 +377,6 @@ def delete_route(sig):
                 sig_new[best_ejections_route].pop(e)
 
             sig = sig_new 
-            sig = perturb(sig)###?
+            # sig = perturb(sig)###?
         
 
