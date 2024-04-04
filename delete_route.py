@@ -3,13 +3,15 @@ from dataclasses import dataclass
 
 from lex import lex_next, lex_next_prune, is_last_subseq
 from load_instance import Node, Edge, load_data
+import logging
 
 ##load from loader
 nodes, edges,Q = load_data("input.txt")
 
 N = len(nodes)-1 #no of customers
 maxTime = 1000
-k_max = 5
+k_max = 10
+N_near=100
 
 sig = []
 
@@ -23,6 +25,10 @@ print(len(sig[1]))
 print("okokok")
 
 def get_all_insertions(v, sig):
+    print("getting all insertions")
+    print("len sig", len(sig))
+    print("len sig[0]", len(sig[0]))
+    print("len sig[-1]", len(sig[-1]))
     all_insertions = []
     for i in range(len(sig)):
         for j in range(1, len(sig[i])):
@@ -66,7 +72,7 @@ def get_all_feasible_insertions(v, sig):
                 all_f_insertions.append(sig_new)
     return all_f_insertions
 
-def get_min_penalty_sig(N_insert, alpha):
+def get_min_penalty_sig(N_insert, alpha=0.99):
     min_p = get_penalty(N_insert[0])
     min_sig = N_insert[0]
     for s in N_insert:
@@ -76,12 +82,12 @@ def get_min_penalty_sig(N_insert, alpha):
             min_p = p
     return min_sig
 
-def get_penalty(sig, alpha):
+def get_penalty(sig, alpha=0.99):
     #capacity violation
     q = 0
     for route in sig:
         for node in route[1:-1]:
-            q+= nodes[node].q_v
+            q+= node.q_v
     P_c = 0
     if(q>Q):
         P_c = q-Q
@@ -89,12 +95,19 @@ def get_penalty(sig, alpha):
     #time violation
     P_tw = 0
     a = [nodes[0].e_v for i in range(N+2)]
-    for i in range(1,N+2):
-        a[i]= max(a[i-1]+ nodes[i-1].s_v+ edges[i-1][i], nodes[i].e_v)
+    # print("len edges", len(edges))
+    # print("len edges[0]", len(edges[0]))
+    # print("N", N)
+    for i in range(1,N+1):
+        a[i]= max(a[i-1]+ nodes[i-1].s_v+ edges[i-1][i].d_e, nodes[i].e_v)
         if(a[i]>nodes[i].l_v):
             P_tw+= a[i]- nodes[i].l_v
             a[i]= nodes[i].l_v
-    
+    a[N+1] = max(a[N]+ nodes[N].s_v+edges[N][0].d_e, nodes[0].e_v)
+    if(a[N+1]>nodes[0].l_v):
+        P_tw+= a[N+1]- nodes[0].l_v
+        a[N+1] = nodes[0].l_v
+
     F_p = P_c + alpha*P_tw
     return F_p
 
@@ -107,19 +120,19 @@ def select_if_route(sig):
 
 
 def get_composite_neighbourhood(v_in, sig): #v_in should already be present in sig
-    assert check_present(v_in, sig)
+    # assert check_present(v_in, sig)
     N = []
     N += two_opt_star(v_in,sig)
     N += out_relocate(v_in, sig)
-    N += in_relocate(v_in, sig)
-    N += exchange(v_in, sig)
+    # N += in_relocate(v_in, sig)
+    # N += exchange(v_in, sig)
     return N
 
 
 def two_opt_star(v_in, sig):
     N = []
-    v_sorted = get_sorted_customers(v_in)
-    for i in range(N_near):
+    v_sorted = get_sorted_customers(v_in, N_near)
+    for i in range(len(v_sorted)):
         sig_prime1 = sig
         sig_prime2 = sig
         w = v_sorted[i]
@@ -155,8 +168,8 @@ def two_opt_star(v_in, sig):
 
 def out_relocate(v_in, sig):
     N = []
-    v_sorted = get_sorted_customers(v_in)
-    for i in range(N_near):
+    v_sorted = get_sorted_customers(v_in, N_near)
+    for i in range(len(v_sorted)):
         sig_prime1 = sig
         sig_prime2 = sig
         w = v_sorted[i]
@@ -177,8 +190,8 @@ def out_relocate(v_in, sig):
 
 def in_relocate(v_in, sig):
     N = []
-    v_sorted = get_sorted_customers(v_in)
-    for i in range(N_near):
+    v_sorted = get_sorted_customers(v_in, N_near)
+    for i in range(len(v_sorted)):
         sig_prime1 = sig
         sig_prime2 = sig
         w = v_sorted[i]
@@ -199,8 +212,8 @@ def in_relocate(v_in, sig):
 
 def exchange(v_in, sig):
     N = []
-    v_sorted = get_sorted_customers(v_in)
-    for i in range(N_near):
+    v_sorted = get_sorted_customers(v_in, N_near)
+    for i in range(len(v_sorted)):
         sig_prime1 = sig
         sig_prime2 = sig
         w = v_sorted[i]
@@ -222,11 +235,14 @@ def exchange(v_in, sig):
         N.append(sig_prime1)
 
 
-def get_sorted_customers():
-    pass
+def get_sorted_customers(v_in, N_near):
+    ##not including nodes
+    all_cus= edges[int(v_in.id)][1:] ##excluding depot 
+    all_cus_sorted  = sorted(all_cus, key=lambda edge: edge.d_e)
+    return all_cus_sorted[1:N_near+1]
 
 
-def get_route_neighbourhood(sig, r, v):
+def get_route_neighbourhood(v_in, sig, r):
     N_sig = get_composite_neighbourhood(v_in, sig)
     N_r = []
     for sig_prime in N_sig:
@@ -237,10 +253,11 @@ def get_route_neighbourhood(sig, r, v):
 def squeeze(v, sig, alpha= 0.99):
     sig_copy = sig
     N_insert = get_all_insertions(v, sig)
+    print("len N_insert", len(N_insert))
     sig = get_min_penalty_sig(N_insert)
     while(get_penalty(sig, alpha)!=0):
         r = select_if_route(sig)
-        N_r = get_route_neighbourhood(sig, r, v)
+        N_r = get_route_neighbourhood(v,sig, r)
         sig_prime = get_min_penalty_sig(N_r, alpha)
         if(get_penalty(sig_prime, alpha)<get_penalty(sig, alpha)):
             sig = sig_prime
@@ -251,10 +268,13 @@ def squeeze(v, sig, alpha= 0.99):
     return sig
 
 
-def get_insertion_ejection_neighbourhood(v_in, sig, k_max= 5):
-    pass
 
 def delete_route(sig):
+    print("delete route")
+    print("len sig", len(sig))
+    print("len sig[0]", len(sig[0]))
+    print("len sig[-1]", len(sig[-1]))
+
     sig_copy = sig #save
     rand_index = random.randint(0, len(sig)-1)
     rem_route = sig.pop(rand_index)
@@ -264,8 +284,10 @@ def delete_route(sig):
     time = 0
 
     while(len(ep)!=0 and time<maxTime):
+        print("time", time)
         time +=1
         v_in = ep.pop()
+        print("v_in.id", v_in.id)
         N_insert = get_all_feasible_insertions(v_in, sig)
 
         if(len(N_insert)!=0):
@@ -273,9 +295,13 @@ def delete_route(sig):
             sig_prime = N_insert.pop(rand_index)
             sig = sig_prime
         
-        # else:
-        #     ### squeeze mechanism
-        #     sig = squeeze(v_in, sig)
+        else:
+            ### squeeze mechanism
+
+            sig = squeeze(v_in, sig)
+            print("after squeeze")
+            print("len sig[-1]", len(sig[-1]))
+            print("len sig[-2]", len(sig[-2]))
         
 
         present = False
@@ -294,7 +320,7 @@ def delete_route(sig):
             for route in sig:
                 for position in range(1, len(route)):
                     original_route = route ## contains nodes
-                    original_route.insert(v_in, position)
+                    original_route.insert(position, v_in)
                     n_c = len(original_route)-2 ## no of customers
 
 
@@ -380,7 +406,7 @@ def delete_route(sig):
 
 
             sig_new = sig 
-            sig_new[best_ejections_route].insert(v_in, best_insertion_position)
+            sig_new[best_ejections_route].insert( best_insertion_position, v_in)
 
             for e in best_ejections[::-1]:
                 ep.append(sig_new[best_ejections_route][e])
@@ -395,9 +421,12 @@ def delete_route(sig):
     return sig 
 
 
+
 sig = delete_route(sig)
+
 print(len(sig))
-print(sig[0])
-print(sig[1])
-print(len(sig[0]))
-print(len(sig[1]))
+print(sig[-1])
+print(sig[-2])
+
+# for route in sig:
+#     print(len(route))

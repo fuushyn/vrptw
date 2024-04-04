@@ -3,7 +3,7 @@ import math
 
 @dataclass
 class Node:
-    id: float
+    id: int
     s_v: float  # Service time
     q_v: float  # Demand 
     e_v: float  # Window start
@@ -13,8 +13,8 @@ class Node:
 
 @dataclass
 class Edge:
-    v: Node
-    w: Node
+    v: int
+    w: int
     c_vw: float  # Travel time
     d_e: float  # Distance
 
