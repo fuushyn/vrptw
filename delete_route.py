@@ -1,6 +1,6 @@
 import random 
 from dataclasses import dataclass
-
+import copy
 from lex import lex_next, lex_next_prune, is_last_subseq
 from load_instance import Node, Edge, load_data
 import logging
@@ -9,8 +9,8 @@ import logging
 nodes, edges,Q = load_data("input.txt")
 
 N = len(nodes)-1 #no of customers
-maxTime = 1000
-k_max = 10
+maxTime = 10
+k_max = 3
 N_near=100
 
 sig = []
@@ -32,7 +32,7 @@ def get_all_insertions(v, sig):
     all_insertions = []
     for i in range(len(sig)):
         for j in range(1, len(sig[i])):
-            sig_new = sig
+            sig_new = sig.copy()
             sig_new[i].insert(j, v)
             all_insertions.append(sig_new)
     return all_insertions
@@ -66,7 +66,7 @@ def get_all_feasible_insertions(v, sig):
     all_f_insertions = []
     for i in range(len(sig)):
         for j in range(1, len(sig[i])):
-            sig_new = sig
+            sig_new = copy.deepcopy(sig)
             sig_new[i].insert(j, v)
             if(check_route_feasibility(sig_new[i])):
                 all_f_insertions.append(sig_new)
@@ -133,8 +133,10 @@ def two_opt_star(v_in, sig):
     N = []
     v_sorted = get_sorted_customers(v_in, N_near)
     for i in range(len(v_sorted)):
-        sig_prime1 = sig
-        sig_prime2 = sig
+        sig_prime1 = copy.deepcopy(sig)
+
+        sig_prime2 = copy.deepcopy(sig)
+
         w = v_sorted[i]
         found = False
         for j in range(len(sig)):
@@ -170,8 +172,10 @@ def out_relocate(v_in, sig):
     N = []
     v_sorted = get_sorted_customers(v_in, N_near)
     for i in range(len(v_sorted)):
-        sig_prime1 = sig
-        sig_prime2 = sig
+        sig_prime1 = copy.deepcopy(sig)
+
+        sig_prime2 = copy.deepcopy(sig)
+
         w = v_sorted[i]
         for j in range(len(sig)):
             if(v_in in sig[j]):
@@ -192,8 +196,10 @@ def in_relocate(v_in, sig):
     N = []
     v_sorted = get_sorted_customers(v_in, N_near)
     for i in range(len(v_sorted)):
-        sig_prime1 = sig
-        sig_prime2 = sig
+        sig_prime1 = copy.deepcopy(sig)
+
+        sig_prime2 = copy.deepcopy(sig)
+
         w = v_sorted[i]
         for j in range(len(sig)):
             if(w in sig[j]):
@@ -214,8 +220,10 @@ def exchange(v_in, sig):
     N = []
     v_sorted = get_sorted_customers(v_in, N_near)
     for i in range(len(v_sorted)):
-        sig_prime1 = sig
-        sig_prime2 = sig
+        sig_prime1 = copy.deepcopy(sig)
+
+        sig_prime2 = copy.deepcopy(sig)
+
         w = v_sorted[i]
         found = False
         for j in range(len(sig)):
@@ -251,7 +259,8 @@ def get_route_neighbourhood(v_in, sig, r):
     return N_r
 
 def squeeze(v, sig, alpha= 0.99):
-    sig_copy = sig
+    sig_copy = copy.deepcopy(sig)
+
     N_insert = get_all_insertions(v, sig)
     print("len N_insert", len(N_insert))
     sig = get_min_penalty_sig(N_insert)
@@ -275,7 +284,8 @@ def delete_route(sig):
     print("len sig[0]", len(sig[0]))
     print("len sig[-1]", len(sig[-1]))
 
-    sig_copy = sig #save
+    sig_copy = copy.deepcopy(sig)
+ #save
     rand_index = random.randint(0, len(sig)-1)
     rem_route = sig.pop(rand_index)
 
@@ -283,14 +293,26 @@ def delete_route(sig):
     p = [1 for _ in range(N)]
     time = 0
 
+    print("before while")
+    print("len sig[-1]", len(sig[-1]))
+    print("len sig[-2]", len(sig[-2]))
+
     while(len(ep)!=0 and time<maxTime):
         print("time", time)
         time +=1
         v_in = ep.pop()
         print("v_in.id", v_in.id)
+        print("before N-sinrt")
+        print("len sig[-1]", len(sig[-1]))
+        print("len sig[-2]", len(sig[-2]))
+
         N_insert = get_all_feasible_insertions(v_in, sig)
+        print("after N_insert")
+        print("len sig[-1]", len(sig[-1]))
+        print("len sig[-2]", len(sig[-2]))
 
         if(len(N_insert)!=0):
+            print("Ninsert non zero")
             rand_index = random.randint(0, len(N_insert)-1)
             sig_prime = N_insert.pop(rand_index)
             sig = sig_prime

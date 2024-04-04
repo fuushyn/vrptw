@@ -21,7 +21,7 @@ class Edge:
 
 N_near = 50
 N = 100 # no of nodes
-Q = 200 #capacity, load from loader
+Q= 200 #load from loader
 
 
 
@@ -97,7 +97,7 @@ def get_sorted_customers():
     pass
 
 
-def two_opt_star(sig, v_in):
+def two_opt_star(sig, v):
     N = []
     v_sorted = get_sorted_customers(v_in)
     for i in range(N_near):
@@ -137,7 +137,7 @@ def two_opt_star(sig, v_in):
 def out_relocate(sig, v):
     N = []
     v_sorted = get_sorted_customers(v_in)
-    for i in range(N_near):
+    for i in range(N_near):``
         sig_prime1 = sig
         sig_prime2 = sig
         w = v_sorted[i]
