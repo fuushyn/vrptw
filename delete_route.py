@@ -32,7 +32,7 @@ def get_all_insertions(v, sig):
     all_insertions = []
     for i in range(len(sig)):
         for j in range(1, len(sig[i])):
-            sig_new = sig.copy()
+            sig_new = copy.deepcopy(sig)
             sig_new[i].insert(j, v)
             all_insertions.append(sig_new)
     return all_insertions
