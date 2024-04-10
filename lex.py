@@ -7,9 +7,11 @@ def lex_next(subseq, n, k_max):
             subseq.append(subseq[-1]+1)
         else:
             subseq[-1]+=1
-    else:
+    elif(subseq!=[n]):
         subseq = subseq[:-1]
         subseq[-1]+=1 
+    else:
+        subseq = []
     return subseq
 
 def lex_next_prune(subseq, n , k_max):
@@ -18,9 +20,11 @@ def lex_next_prune(subseq, n , k_max):
 
     if(subseq[-1]<n):
         subseq[-1]+=1
-    else:
+    elif(subseq!=[n]):
         subseq = subseq[:-1]
         subseq[-1]+=1
+    else:
+        subseq = []
     return subseq
 
 def is_last_subseq(subseq, n, k_max):

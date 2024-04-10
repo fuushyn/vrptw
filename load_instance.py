@@ -37,7 +37,7 @@ def load_data(input_file):
         values = list(map(lambda x: float(x), values))
         ## values = [node_id, x, y, demand, start_time, end_time, service_time]
 
-        new_node = Node(id=values[0], x= values[1], y = values[2], q_v= values[3], e_v = values[4], l_v = values[5], s_v= values[6])
+        new_node = Node(id=int(values[0]), x= values[1], y = values[2], q_v= values[3], e_v = values[4], l_v = values[5], s_v= values[6])
 
         nodes.append(new_node)
 

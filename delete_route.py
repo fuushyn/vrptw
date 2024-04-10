@@ -9,9 +9,9 @@ import logging
 nodes, edges,Q = load_data("input.txt")
 
 N = len(nodes)-1 #no of customers
-maxTime = 10
-k_max = 3
-N_near=100
+maxTime = 100
+k_max = 7
+N_near= 50
 
 sig = []
 
@@ -72,7 +72,7 @@ def get_all_feasible_insertions(v, sig):
                 all_f_insertions.append(sig_new)
     return all_f_insertions
 
-def get_min_penalty_sig(N_insert, alpha=0.99):
+def get_min_penalty_sig(N_insert, alpha=1):
     min_p = get_penalty(N_insert[0])
     min_sig = N_insert[0]
     for s in N_insert:
@@ -82,7 +82,7 @@ def get_min_penalty_sig(N_insert, alpha=0.99):
             min_p = p
     return min_sig
 
-def get_penalty(sig, alpha=0.99):
+def get_penalty(sig, alpha=1):
     #capacity violation
     q = 0
     for route in sig:
@@ -124,12 +124,13 @@ def get_composite_neighbourhood(v_in, sig): #v_in should already be present in s
     N = []
     N += two_opt_star(v_in,sig)
     N += out_relocate(v_in, sig)
-    # N += in_relocate(v_in, sig)
-    # N += exchange(v_in, sig)
+    N += in_relocate(v_in, sig)
+    N += exchange(v_in, sig)
     return N
 
 
 def two_opt_star(v_in, sig):
+    ### v and w must belong to different routes in 2 opt star
     N = []
     v_sorted = get_sorted_customers(v_in, N_near)
     for i in range(len(v_sorted)):
@@ -140,31 +141,34 @@ def two_opt_star(v_in, sig):
         w = v_sorted[i]
         found = False
         for j in range(len(sig)):
-            if(found):
-                break
             for i in range(len(sig)):
-                if(v_in in sig[j] and w in sig[i]):
+                if(v_in in sig[j] and w in sig[i] and i != j):
                     ind_v = sig[j].index(v_in)
                     ind_w = sig[i].index(w)
                     sig_prime1[j]= sig[j][:ind_v]+ sig[i][ind_w+1:]
                     sig_prime1[i]= sig[i][:ind_w+1]+sig[j][ind_v:]
                     found  = True
                     break
-        N.append(sig_prime1)
+            if(found):
+                N.append(sig_prime1)
+                break
+
+        
 
         found = False
         for j in range(len(sig)):
-            if(found):
-                break
             for i in range(len(sig)):
-                if(v_in in sig[j] and w in sig[i]):
+                if(v_in in sig[j] and w in sig[i] and i!=j):
                     ind_v = sig[j].index(v_in)
                     ind_w = sig[i].index(w)
                     sig_prime2[j]= sig[j][:ind_v +1]+ sig[i][ind_w:]
                     sig_prime2[i]= sig[i][:ind_w]+ sig[j][ind_v+1:]
                     found  = True
                     break
-        N.append(sig_prime2)
+            if(found):
+                N.append(sig_prime2)
+                break
+
 
     return N
 
@@ -184,9 +188,10 @@ def out_relocate(v_in, sig):
                 break
         for j in range(len(sig)):
             if(w in sig[j]):
-                index = sig.index(w)
-                sig_prime1.insert(index, v_in)
-                sig_prime2.insert(index+1, v_in)
+                index1 = sig_prime1[j].index(w)
+                index2 = sig_prime2[j].index(w)
+                sig_prime1[j].insert(index1, v_in)
+                sig_prime2[j].insert(index2+1, v_in)
                 break
         N.append(sig_prime1)
         N.append(sig_prime2)
@@ -208,9 +213,10 @@ def in_relocate(v_in, sig):
                 break
         for j in range(len(sig)):
             if(v_in in sig[j]):
-                index = sig.index(v_in)
-                sig_prime1.insert(index, w)
-                sig_prime2.insert(index+1, w)
+                index1 = sig_prime1[j].index(v_in)
+                index2 = sig_prime2[j].index(v_in)
+                sig_prime1[j].insert(index1, w)
+                sig_prime2[j].insert(index2+1, w)
                 break
         N.append(sig_prime1)
         N.append(sig_prime2)
@@ -227,8 +233,6 @@ def exchange(v_in, sig):
         w = v_sorted[i]
         found = False
         for j in range(len(sig)):
-            if(found):
-                break
             for i in range(len(sig)):
                 if(v_in in sig[j] and w in sig[i]):
                     ind_v = sig[j].index(v_in)
@@ -240,14 +244,35 @@ def exchange(v_in, sig):
                     sig_prime1[j].remove(v_in)
                     found  = True
                     break
-        N.append(sig_prime1)
+            if(found):
+                N.append(sig_prime1)
+                break
 
+        found = False
+        for j in range(len(sig)):
+            for i in range(len(sig)):
+                if(v_in in sig[j] and w in sig[i]):
+                    ind_v = sig[j].index(v_in)
+                    ind_w = sig[i].index(w)
+                    sig_prime2[i].insert(ind_w+1, v_in)
+                    sig_prime2[i].remove(sig[i][ind_w+1])
+
+                    sig_prime2[j].insert(ind_v, sig[i][ind_w+1])
+                    sig_prime2[j].remove(v_in)
+                    found  = True
+                    break
+            if(found):
+                N.append(sig_prime2)
+                break
+
+    return N 
 
 def get_sorted_customers(v_in, N_near):
     ##not including nodes
     all_cus= edges[int(v_in.id)][1:] ##excluding depot 
     all_cus_sorted  = sorted(all_cus, key=lambda edge: edge.d_e)
-    return all_cus_sorted[1:N_near+1]
+    all_cus_nodes = list(map(lambda e: nodes[e.w],all_cus_sorted))
+    return all_cus_nodes[1:N_near+1]
 
 
 def get_route_neighbourhood(v_in, sig, r):
@@ -258,22 +283,24 @@ def get_route_neighbourhood(v_in, sig, r):
             N_r.append(sig_prime)
     return N_r
 
-def squeeze(v, sig, alpha= 0.99):
+def squeeze(v, sig, alpha= 1):
     sig_copy = copy.deepcopy(sig)
 
     N_insert = get_all_insertions(v, sig)
     print("len N_insert", len(N_insert))
     sig = get_min_penalty_sig(N_insert)
+    
     while(get_penalty(sig, alpha)!=0):
+        print("while, penalty: ",get_penalty(sig, alpha) )
         r = select_if_route(sig)
         N_r = get_route_neighbourhood(v,sig, r)
         sig_prime = get_min_penalty_sig(N_r, alpha)
         if(get_penalty(sig_prime, alpha)<get_penalty(sig, alpha)):
-            sig = sig_prime
+            sig = copy.deepcopy(sig_prime)
         else:
             break
     if(get_penalty(sig, alpha)!=0):
-        sig = sig_copy
+        sig = copy.deepcopy(sig_copy)
     return sig
 
 
@@ -290,7 +317,7 @@ def delete_route(sig):
     rem_route = sig.pop(rand_index)
 
     ep = rem_route[1:-1]
-    p = [1 for _ in range(N)]
+    p = [1 for _ in range(N+1)]
     time = 0
 
     print("before while")
@@ -319,7 +346,7 @@ def delete_route(sig):
         
         else:
             ### squeeze mechanism
-
+            print("squeezing", v_in, "........")
             sig = squeeze(v_in, sig)
             print("after squeeze")
             print("len sig[-1]", len(sig[-1]))
@@ -333,18 +360,22 @@ def delete_route(sig):
                 break
         
         if(not present):
+            print("entering insertion ejections")
+            # print(v_in.id)
             p[v_in.id] += 1
             P_best = float('inf')
             best_ejections = [1]
             best_ejections_route = 0
             best_insertion_position = 0
 
-            for route in sig:
+            for route_index, route in enumerate(sig):
                 for position in range(1, len(route)):
-                    original_route = route ## contains nodes
+                    
+                    original_route = copy.deepcopy(route) ## contains nodes
+                    print("og route", original_route)
                     original_route.insert(position, v_in)
                     n_c = len(original_route)-2 ## no of customers
-
+                    print("n_c", n_c)
 
                     ##compute z_i ->latest possible arrival times
                     # z_i  = min(l_i, z_i+1 - c_i_i+1 - s_i)
@@ -355,12 +386,14 @@ def delete_route(sig):
                         curr_node = original_route[i]
                         next_node = original_route[i+1]
 
-                        z[i] = min(curr_node.l_v, z[i+1]- edges[curr_node.id][next_node.id]- curr_node.s_v)
+                        z[i] = min(curr_node.l_v, z[i+1]- edges[curr_node.id][next_node.id].d_e- curr_node.s_v)
                     
                     
                     ejections = [1] ### contains indices of the original route
                     a_j_prev  = 0
-                    while(ejections !=[n_c]):
+                    ### don't eject depot- made sure in lex
+                    while(ejections !=[]):
+                        print("checking ejections: ", ejections)
                         # compute P_sum
                         P_sum = 0
                         for e in ejections:
@@ -370,12 +403,12 @@ def delete_route(sig):
                         j = ejections[-1]+1
 
 
-                        ejected_route = original_route
+                        ejected_route = copy.deepcopy(original_route)
 
                         for e in ejections[::-1]:
                             ejected_route.pop(e)
                         
-                        ##j in o.r. is j-len(ejections)
+                        ##j in e.r. is j-len(ejections)
                         j_ej = j-len(ejections)
 
                         a_0 = ejected_route[0].e_v 
@@ -384,7 +417,7 @@ def delete_route(sig):
                             curr_node = ejected_route[i]
                             prev_node = ejected_route[i-1]
 
-                            a_curr = max(a_prev+prev_node.s_v+ edges[prev_node.id][curr_node.id],curr_node.e_v )
+                            a_curr = max(a_prev+prev_node.s_v+ edges[prev_node.id][curr_node.id].d_e,curr_node.e_v )
                             
                             a_prev = a_curr
 
@@ -421,20 +454,20 @@ def delete_route(sig):
                             if(P_sum< P_best):
                                 P_best = P_sum 
                                 best_ejections = ejections
-                                best_ejections_route = route
+                                best_ejections_route = route_index
                                 best_insertion_position = position 
+
 
                         ejections = lex_next(ejections, n_c, k_max)
 
-
-            sig_new = sig 
+            sig_new = copy.deepcopy(sig) 
             sig_new[best_ejections_route].insert( best_insertion_position, v_in)
 
             for e in best_ejections[::-1]:
                 ep.append(sig_new[best_ejections_route][e])
                 sig_new[best_ejections_route].pop(e)
 
-            sig = sig_new 
+            sig = copy.deepcopy(sig_new)
             # sig = perturb(sig)###?
 
     if(ep!=[]):
