@@ -11,7 +11,7 @@ nodes, edges,Q = load_data("input.txt")
 N = len(nodes)-1 #no of customers
 maxTime = 100
 k_max = 7
-N_near= 50
+N_near= 100
 
 sig = []
 
@@ -372,10 +372,10 @@ def delete_route(sig):
                 for position in range(1, len(route)):
                     
                     original_route = copy.deepcopy(route) ## contains nodes
-                    print("og route", original_route)
+                    # print("og route", original_route)
                     original_route.insert(position, v_in)
                     n_c = len(original_route)-2 ## no of customers
-                    print("n_c", n_c)
+                    # print("n_c", n_c)
 
                     ##compute z_i ->latest possible arrival times
                     # z_i  = min(l_i, z_i+1 - c_i_i+1 - s_i)

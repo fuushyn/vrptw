@@ -494,8 +494,26 @@ def delete_route(sig):
     return sig
 
 
+### for eax
+def get_edge_matrix(sig):
+    pass 
+
+def get_cycles(edge_matrix):
+    pass 
 
 def eax(p_a, p_b):
+    em_a = get_edge_matrix(p_a)
+    em_b = get_edge_matrix(p_b)
+
+    ## step 1
+    ##!!!!!!! combine em_a and em_b to get gab
+    gab = em_a x em_b 
+
+
+
+
+
+def eax_old(p_a, p_b):
     #p_a and p_b are parent solutions
     ## step 1 - generate graph from parents
     ## each solutions is complete => covers all nodes in nodes array
