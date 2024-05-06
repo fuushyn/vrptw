@@ -8,9 +8,14 @@ import random
 
 
 class Graph:
-    def __init__(self, vertices):
+    def __init__(self, vertices=nodes_id, sig=None):
         self.vertices = vertices
         self.edges = []
+        if(sig!=None):
+            for route in sig:
+                for i in range(len(route)-1):
+                    self.add_edge(route[i].id, route[i+1].id)
+
 
     def add_edge(self, u, v):
         self.edges.append((u, v))
@@ -23,6 +28,8 @@ class Graph:
 
     def get_edges(self):
         return self.edges
+    
+
 
 def create_gab(pa, pb):
     gab = Graph(pa.vertices)
